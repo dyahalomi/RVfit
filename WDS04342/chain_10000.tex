@@ -1,0 +1,61 @@
+\documentclass{article}
+\usepackage{graphicx}
+
+\begin{document}
+
+\begin{table}
+\centering
+\begin{tabular}{| c | c |}
+\hline
+$P$ (days) & $3679.6^{+5.6}_{-6.0}$ \\
+\hline
+$t_{tran}$ (days) & $48830^{+18}_{-152}$ \\
+\hline
+$\sqrt{e} cos\omega$ & $0.742^{+0.014}_{-0.022}$ \\
+\hline
+$\sqrt{e} sin\omega$ & $-0.225^{+0.035}_{-0.300}$ \\
+\hline
+$K_1$ (km/s) & $4.57^{+1.54}_{-0.14}$ \\
+\hline
+$\gamma$ (km/s) & $41.400^{+0.115}_{-0.095}$ \\
+\hline
+$\gamma_{os,1} (km/s)$ & $0.22^{+0.14}_{-0.14}$ \\
+\hline
+$\gamma_{os,2} (km/s)$ & $0.56^{+0.83}_{-0.98}$ \\
+\hline
+$\gamma_{os,3} (km/s)$ & $0.37^{+0.77}_{-0.70}$ \\
+\hline
+$\sigma^2_{j,1} (km/s)^2$ & $0.127^{+0.633}_{-0.078}$ \\
+\hline
+$\sigma^2_{j,2} (km/s)^2$ & $0.221^{+0.649}_{-0.064}$ \\
+\hline
+$\sigma^2_{j,3} (km/s)^2$ & $0.55^{+0.32}_{-0.36}$ \\
+\hline
+$\sigma^2_{j,4} (km/s)^2$ & $0.52^{+0.36}_{-0.34}$ \\
+\hline
+$e$ & $0.780^{+0.115}_{-0.015}$ \\
+\hline
+$\omega$ (deg) & $-16.8^{+2.6}_{-18.5}$ \\
+\hline
+\end{tabular}
+\end{table}
+
+\begin{figure}[!htb]
+\centering
+\includegraphics[width=\textwidth]{RVfit_10000.jpg}
+\caption{RV fit to median MCMC parameters}
+\end{figure}
+
+\begin{figure}[!htb]
+\centering
+\includegraphics[width=\textwidth]{corner_10000.jpg}
+\caption{Corner plot for MCMC model}
+\end{figure}
+
+\begin{figure}[!htb]
+\centering
+\includegraphics[width=\textwidth]{chainPlot_10000.jpg}
+\caption{MCMC chains for all 50 walkers. Green line is burnout}
+\end{figure}
+
+\end{document}
