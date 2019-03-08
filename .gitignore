@@ -1,0 +1,5 @@
+# ignore all .txt files (chains)
+*.txt
+
+#ignore all .pyc files
+*.pyc
