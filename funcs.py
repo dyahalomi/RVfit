@@ -26,10 +26,10 @@ def initrange(p, numSpec):
 	"""
 
 	
-	errorEst = [5.8e-03,   1.4e-01,   2.5e-03,   2.5e-03,   3.8e-02,   4.8e-02]
+	errorEst = [5.8e-03,   1.4e-01,   2.5e-03,   2.5e-03,   3.8e-02]
 
 	for i in range(0, numSpec):
-		errorEst.append(5.7e-02)
+		errorEst.append(4.8e-02)
 
 	for i in range(0, numSpec):
 		errorEst.append(1e-5)
@@ -70,18 +70,20 @@ def kepler(M, e):
 
 
 
-def RV_model(t, p):
+def RV_model(t, period, ttran, ecosomega, esinomega, K, gamma):
 	"""
-	Given the orbital parameters compute the RV at times t.
+	Given the orbital parameters compute the RV at times t, without gamma
 
 	Input
 	-----
 	t : ndarray
 		Times to return the model RV.
-	p : ndarray
-		RV parameters.
-		period [days], ttran [days], e,  omega [radians]
-		K [km/s], gamma [km/s]
+	period : float [days]
+	ttran : float [days]
+	ecosomega : float
+	esinomega : float 
+	K : float [km/s]
+	gamma : float [km/s]
 
 	Returns
 	-------
@@ -90,8 +92,7 @@ def RV_model(t, p):
 
 	"""
 
-	# Define parameters needed for RV model
-	(period, ttran, ecosomega, esinomega, K, gamma) = p[0:6]
+
 
 
 	e = np.sqrt(ecosomega**2. + esinomega**2.)
@@ -111,6 +112,8 @@ def RV_model(t, p):
 
 	#Define mean anomaly: M
 	M = (n * (t - tau)) % (2. * np.pi)
+
+
 
 	#Determine the Energy: E
 	E = kepler(M, e)
@@ -152,27 +155,26 @@ def loglikelihood(p, t, RV, RVerr, chisQ=False):
 		Log likelihood that the model fits the data.
 	"""
 
-	# Define all parameters except gammaOffsets and jitters
-	(period, ttran, ecosomega, esinomega, K, gamma) = p[0:6]
+	# Define all parameters except gamma and jitters
+	(period, ttran, ecosomega, esinomega, K) = p[0:5]
 
 	# Determine the number of spectra observers
 	numSpec = len(t)
 
-	# Define a list of gamma offset parameters
-	gammaOffset = p[6:6+numSpec-1]
+	# Define a list of gamma parameters
+	gammas = p[5:5+numSpec]
 
 	# Define a list of jitter squared parameters
-	jitterSqrd = p[6+numSpec-1:len(p)]
+	jitterSqrd = p[5+numSpec:len(p)]
 
 	# Check observations are consistent
 	if ( len(t) != len(RV) or len(t) != len(RVerr) or len(RV) != len(RVerr) ):
 		print "Error! Mismatched number of spectra!"
 
-
-	# Compute RV model light curve for all datasets
+	# Compute RV model light curve for the first all spectra without gamma added
 	models = []
 	for ii in range(0, numSpec):
-		models.append(RV_model(t[ii], p))
+		models.append(RV_model(t[ii], period, ttran, ecosomega, esinomega, K, gammas[ii]))
 
 
 	# compute loglikelihood for model
@@ -181,18 +183,14 @@ def loglikelihood(p, t, RV, RVerr, chisQ=False):
 	totchisq = 0
 	loglikelihood = 0
 
-	totchisq += np.sum((RV[0]-models[0])**2. / ( 2. * (RVerr[0]**2. + jitterSqrd[0]) ))
-	loglikelihood += -np.sum( 
-			(RV[0]-models[0])**2. / ( 2. * (RVerr[0]**2. + jitterSqrd[0]) ) +
-			np.log(np.sqrt(2. * np.pi * (RVerr[0]**2. + jitterSqrd[0])))
-			)
-
-	for ii in range(1, numSpec):
-		totchisq += np.sum((RV[ii]-models[ii]+gammaOffset[ii-1])**2. / ( 2. * (RVerr[ii]**2. + jitterSqrd[ii]) ))
+	for ii in range(0, numSpec):
+		totchisq += np.sum((RV[ii]-models[ii])**2. / ( (RVerr[ii]**2. + jitterSqrd[ii]) ))	
 		loglikelihood += -np.sum( 
-			(RV[ii]-models[ii]+gammaOffset[ii-1])**2. / ( 2. * (RVerr[ii]**2. + jitterSqrd[ii]) ) +
+			(RV[ii]-models[ii])**2. / ( 2. * (RVerr[ii]**2. + jitterSqrd[ii]) ) +
 			np.log(np.sqrt(2. * np.pi * (RVerr[ii]**2. + jitterSqrd[ii])))
 			)
+
+
 
 	# If we want to minimize chisQ, return it now
 	if chisQ:
@@ -222,14 +220,14 @@ def logprior(p, numSpec):
 		priors.
 	"""
 
-	# Define all parameters except gammaOffsets and jitters
-	(period, ttran, ecosomega, esinomega, K, gamma) = p[0:6]
+	# Define all parameters except gammas and jitters
+	(period, ttran, ecosomega, esinomega, K) = p[0:5]
 
 	# Define a list of gamma offset parameters
-	gammaOffset = p[6:6+numSpec-1]
+	gammas = p[5:5+numSpec]
 
 	# Define a list of jitter squared parameters
-	jitterSqrd = p[6+numSpec-1:len(p)]
+	jitterSqrd = p[5+numSpec:len(p)]
 
 	e = np.sqrt(ecosomega**2. + esinomega**2.)
 	omega = np.arctan2(esinomega, ecosomega)
@@ -388,6 +386,7 @@ def readObservations(filename, sepSpectra=False):
 	rvFinal = []
 	rvErrFinal = []
 	if sepSpectra:
+
 		currentSpec = 0
 		for spec in range(0, len(spectra)):
 			if spectra[spec] == currentSpec:

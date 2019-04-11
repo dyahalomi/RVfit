@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import emcee
 import corner
-from funcsTemp import *
+from funcs import *
 import csv
 
 
@@ -38,9 +38,10 @@ def runMCMC(p, t, rv, rvErr, outfile, niter=10000, nwalkers=50):
 	"""
 
 	ndim = len(p)
+	nspec = len(t)
 
 	#start walkers in a ball near the optimal solution
-	startlocs = [p + initrange(p, 7) * np.random.randn(ndim) for i in np.arange(nwalkers)]
+	startlocs = [p + initrange(p, nspec) * np.random.randn(ndim) for i in np.arange(nwalkers)]
 
 	#run emcee MCMC code
 	#run both data sets
@@ -74,14 +75,14 @@ def runMCMC(p, t, rv, rvErr, outfile, niter=10000, nwalkers=50):
 	return "MCMC complete"
 
 
-t, rv, rvErr = readObservations('./HD102509/HD102509.orb', True)
+
 
 '''
 #set first guess of parameters for modeling
-#p = [period, ttran, ecosomega, esinomega, K, gamma,...]
+#p = [period, ttran, ecosomega, esinomega, K,...]
 p = [3677, 48667, 0.84, -0.26, 4.4, 42]
 
-# p = [...gamma_offset1, gamma_offset2, gamma_offset3...]
+# p = [...gamma_1, gamma_2, gamma_3...]
 for i in range(1, len(t)):	
 	p.append(1)
 
@@ -90,13 +91,6 @@ for i in range(0, len(t)):
 	p.append(0.0)
 
 
-#median parameters from L79 first run
-p = [ 3.67959833e+03,  4.88297491e+04,  7.42153203e-01, -2.25073992e-01,
-  4.57461506e+00,  4.14003163e+01,  2.21742301e-01,  5.60983043e-01,
-  3.70576015e-01,  1.27090779e-01,  2.20538442e-01,  5.46693365e-01,
-  5.19543822e-01]
-
-'''
 
 #median parameters for HD102509 10,000 step run
 p = [ 7.16902685e+01,  4.30725785e+04, -0.0003,  0.0004,
@@ -106,8 +100,37 @@ p = [ 7.16902685e+01,  4.30725785e+04, -0.0003,  0.0004,
   	  5.18178767e-02,  8.50094542e-02,  9.69902369e-02]
 
 
+#median parameters for HD102509 100,000 step run w gammas instead of gamma_os
+p = [ 7.16902791e+01,  4.30725716e+04, -2.27864352e-04,  4.68399935e-04,
+  	  3.00898058e+01,  1.86445675e+00,  1.77603777e+00,  1.28836824e+00,
+  	  7.16327739e-01,  9.74341232e-01,  6.93817102e-01,  4.04686472e-01,
+  	  3.96837830e-01,  2.78218700e-01,  4.31310021e-01,  1.22508258e-01,
+  	  2.91819070e-02,  7.35546530e-02,  9.58132551e-02]
+
+
+
+#median parameters for HD102509 100,000 step run w gammas instead of gamma_os -- taking out 1 set of spectra
+p = [ 7.16902791e+01,  4.30725716e+04, -2.27864352e-04,  4.68399935e-04,
+  	  3.00898058e+01,  1.77603777e+00,  1.28836824e+00,
+  	  7.16327739e-01,  9.74341232e-01,  6.93817102e-01,  4.04686472e-01,
+  	  2.78218700e-01,  4.31310021e-01,  1.22508258e-01,
+  	  2.91819070e-02,  7.35546530e-02,  9.58132551e-02]
+
+'''
+
+
+#median parameters from L79 first run
+p = [ 3.67959833e+03,  4.88297491e+04,  7.42153203e-01, -2.25073992e-01,
+  4.57461506e+00,  4.14003163e+01,  4.14003163e+01,  4.14003163e+01,
+  4.14003163e+01,  1.27090779e-01,  2.20538442e-01,  5.46693365e-01,
+  5.19543822e-01]
+
+
+
+
 #run MCMC
-print runMCMC(p, t, rv, rvErr, './HD102509/chain_100000_gammas.txt', niter = 100000)
+t, rv, rvErr = readObservations('./WDS04342/L79.txt', True)
+print runMCMC(p, t, rv, rvErr, './WDS04342/chain_100000_gammas.txt', niter = 100000)
 
 
 

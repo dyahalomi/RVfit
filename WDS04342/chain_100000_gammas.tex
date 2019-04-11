@@ -1,0 +1,63 @@
+\documentclass{article}
+\usepackage{graphicx}
+\usepackage[margin=1in]{geometry}
+
+\begin{document}
+
+\begin{table}
+\centering
+\caption{Reduced $\chi^2$: 0.95}
+\begin{tabular}{| c | c |}
+\hline
+$P$ (days) & $3679.8^{+5.0}_{-4.7}$ \\
+\hline
+$t_{tran}$ (days) & $48835^{+15}_{-15}$ \\
+\hline
+$\sqrt{e} cos\omega$ & $0.744^{+0.013}_{-0.013}$ \\
+\hline
+$\sqrt{e} sin\omega$ & $-0.214^{+0.033}_{-0.033}$ \\
+\hline
+$K_1$ (km/s) & $4.54^{+0.13}_{-0.13}$ \\
+\hline
+$\gamma_{0} (km/s)$ & $41.392^{+0.093}_{-0.093}$ \\
+\hline
+$\gamma_{1} (km/s)$ & $41.201^{+0.093}_{-0.093}$ \\
+\hline
+$\gamma_{2} (km/s)$ & $40.68^{+0.76}_{-0.76}$ \\
+\hline
+$\gamma_{3} (km/s)$ & $41.12^{+0.66}_{-0.65}$ \\
+\hline
+$\sigma^2_{j,1} (km/s)^2$ & $0.104^{+0.087}_{-0.060}$ \\
+\hline
+$\sigma^2_{j,2} (km/s)^2$ & $0.205^{+0.078}_{-0.052}$ \\
+\hline
+$\sigma^2_{j,3} (km/s)^2$ & $0.50^{+0.34}_{-0.34}$ \\
+\hline
+$\sigma^2_{j,4} (km/s)^2$ & $0.50^{+0.34}_{-0.34}$ \\
+\hline
+$e$ & $0.775^{+0.013}_{-0.013}$ \\
+\hline
+$\omega$ (deg) & $-16.0^{+2.4}_{-2.4}$ \\
+\hline
+\end{tabular}
+\end{table}
+
+\begin{figure}[!htb]
+\centering
+\includegraphics[width=\textwidth]{RVfit_100000_gammas.jpg}
+\caption{RV fit to median MCMC parameters. RMS residual velocity of 0.71$\rm{km \: s^{-1}}$.}
+\end{figure}
+
+\begin{figure}[!htb]
+\centering
+\includegraphics[width=\textwidth]{corner_100000_gammas.jpg}
+\caption{Contour plots showing the $1 \sigma$, $2 \sigma$, and $3 \sigma$ constraints on pairs of parameters for the MCMC model.}
+\end{figure}
+
+\begin{figure}[!htb]
+\centering
+\includegraphics[width=\textwidth]{chainPlot_100000_gammas.jpg}
+\caption{MCMC chains for all 50 walkers. Green line is burnout.}
+\end{figure}
+
+\end{document}

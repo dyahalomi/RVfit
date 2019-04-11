@@ -5,8 +5,7 @@ Analyze the results of an MCMC run.
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 import numpy as np
-from funcs import RV_model
-from funcs import readObservations
+from funcs import *
 import matplotlib.pyplot as plt
 import matplotlib.ticker as plticker
 import csv
@@ -15,18 +14,18 @@ import csv
 
 #labels HIRES or TRES
 labels = ['$P$ (days)', '$t_{tran}$ (days)', '$\sqrt{e} cos\omega$', '$\sqrt{e} sin\omega$',
-          '$K_1$ (km/s)', '$\gamma$ (km/s)']
+          '$K_1$ (km/s)']
 
 numSpec = 7
-for i in range(1, numSpec):
-    labels.append('$\gamma_{os,' + str(i) + '} (km/s)$')
+for i in range(0, numSpec):
+    labels.append('$\gamma_{' + str(i+1) + '} (km/s)$')
 
 for i in range(0, numSpec):
     labels.append('$\sigma^2_{j,' + str(i+1) +'} (km/s)^2$')
 
 
 # the file with the MCMC chain results
-infile = './HD102509/chain_100000.txt'
+infile = './HD102509/chain_100000_gammas.txt'
 
 
 # after the burn in, only use every thin amount for speed
@@ -34,13 +33,12 @@ nthin = 1
 
 # output the median and 1-sigma error results to a TeX file
 # use None if not desired
-texout = './HD102509/chain_100000.tex'
+texout = './HD102509/chain_100000_gammas.tex'
 
 foldername = './HD102509/'
-RVfigname = 'RVfit_100000.jpg'
-cornerFigname = 'corner_100000.jpg'
-chainFigname = 'chainPlot_100000.jpg'
-
+RVfigname = 'RVfit_100000_gammas.jpg'
+cornerFigname = 'corner_100000_gammas.jpg'
+chainFigname = 'chainPlot_100000_gammas.jpg'
 
 
 # iteration where burn-in stops
@@ -69,6 +67,189 @@ x = x[good, :]
 iteration = iteration[good]
 walkers = walkers[good]
 loglike = loglike[good]
+
+
+def plot_RV(p, t, rv,rvErr):
+    '''
+    Plot the RV data against RV model
+
+    '''
+    # Define all parameters except gammaOffsets and jitters
+    (period, ttran, ecosomega, esinomega, K) = p[0:5]
+
+    # Define a list of gamma offset parameters
+    gammas = p[5:5+numSpec]
+
+    # Define a list of jitter squared parameters
+    jitterSqrd = p[5+numSpec:len(p)]
+
+
+    gammaOffsets = []
+    for ii in range(0, len(gammas)):
+        gammaOffsets.append(gammas[0] - gammas[ii])
+
+
+    colors = [
+    '#800000', '#9A5324', '#808000', '#469990', '#000075', '#e6194B', '#f58231', 
+    '#ffe119', '#bfef45', '#3cb44b', '#42d4f4', '#4363d8', '#911eb4', '#f032e6'
+    ]
+
+    plt.figure(figsize=(15,10))
+    
+    gs = gridspec.GridSpec(2, 1, height_ratios=[2,1], wspace=0.03)
+    gs.update(hspace=0.)
+
+    ax0 = plt.subplot(gs[0])
+    ax1 = plt.subplot(gs[1])
+
+    #ax0.errorbar(t[0], rv[0], yerr = np.sqrt(rvErr[0]**2. + jitterSqrd[0]), fmt = 'o', color = colors[0],  markersize = 10, label = "Spectra 1")
+    for ii in range(0, len(t)):
+        ax0.errorbar(t[ii], rv[ii] + gammaOffsets[ii], yerr=np.sqrt(rvErr[ii]**2. + jitterSqrd[ii]), fmt='o', color = colors[ii],  markersize = 10, label = "Spectra " + str(ii+1))
+
+
+    t_plot = np.arange(10000, 60000)
+    model = RV_model(t_plot, period, ttran, ecosomega, esinomega, K, gammas[0])
+    ax0.plot(t_plot, model, color = 'k')
+
+
+    rv_models = []
+    for ii in range(0, len(t)):
+        rv_models.append(RV_model(t[ii], period, ttran, ecosomega, esinomega, K, gammas[0]))
+    
+    ax1.plot([10000, 60000], [0., 0.], color = 'k')
+
+    #ax1.errorbar(t[0], rv[0] - rv_models[0], yerr = np.sqrt(rvErr[0]**2. + jitterSqrd[0]), fmt = 'o', markersize = 10,  color = colors[0])
+    for ii in range(0, len(t)):
+        ax1.errorbar(t[ii], rv[ii] - rv_models[ii] + gammaOffsets[ii], yerr = np.sqrt(rvErr[ii]**2. + jitterSqrd[ii]), fmt = 'o',  markersize = 10, color = colors[ii])
+
+   
+    ax1.set_xlabel("Time (units?)", fontsize = 18)
+    ax0.set_ylabel("Radial Velocity (km/s)", fontsize = 18)
+    ax1.set_ylabel("Residuals (km/s)", fontsize = 18)
+    yticks = ax0.yaxis.get_major_ticks()
+    xticks = ax0.xaxis.get_major_ticks()
+    xticks[0].label1.set_visible(False)
+    xticks[-1].label1.set_visible(False)
+    yticks[0].label1.set_visible(False)
+    ax0.legend(numpoints = 1, loc = 2, fontsize = 18)
+    plt.xlim(10000,60000)
+
+    plt.savefig(foldername + 'unfolded_' + RVfigname)
+    plt.show()
+
+
+def plot_foldedRV(p, t, rv, rvErr):
+    '''
+    Plot the RV data against RV model folded
+
+    '''
+    # Define all parameters except gammas and jitters
+    (period, ttran, ecosomega, esinomega, K) = p[0:5]
+
+    # Define a list of gamma offset parameters
+    gammas = p[5:5+numSpec]
+
+    # Define a list of jitter squared parameters
+    jitterSqrd = p[5+numSpec:len(p)]
+
+    colors = [
+    '#800000', '#9A5324', '#808000', '#469990', '#000075', '#e6194B', '#f58231', 
+    '#ffe119', '#bfef45', '#3cb44b', '#42d4f4', '#4363d8', '#911eb4', '#f032e6'
+    ]
+
+    plt.figure(figsize=(15,10))
+    
+    gs = gridspec.GridSpec(2, 1, height_ratios=[2,1], wspace=0.03)
+    gs.update(hspace=0.)
+
+    ax0 = plt.subplot(gs[0])
+    ax1 = plt.subplot(gs[1])
+
+    gammaOffsets = []
+    for ii in range(0, len(gammas)):
+        gammaOffsets.append(gammas[0] - gammas[ii])
+
+    phase_rv = []
+    for ii in range(0, len(t)):
+        phase_rv_i = ((t[ii]-p[1]) % p[0])/p[0]
+        phase_rv.append(phase_rv_i)
+        ax0.errorbar(phase_rv_i, rv[ii] + gammaOffsets[ii], yerr=np.sqrt(rvErr[ii]**2. + jitterSqrd[ii]), fmt='o', color = colors[ii],  markersize = 10, label = "Spectra " + str(ii+1))
+
+
+    
+    
+    tMod = np.arange(p[0], p[0] + p[1])
+    model = RV_model(tMod, period, ttran, ecosomega, esinomega, K, gammas[0])
+    phase = ((tMod-p[1]) % p[0]) / p[0]
+    lsort = np.argsort(phase)
+    ax0.plot(phase[lsort], model[lsort], color = 'k')
+
+
+    rv_models = []
+    for ii in range(0, len(t)):
+        rv_models.append(RV_model(t[ii], period, ttran, ecosomega, esinomega, K, gammas[0]))
+
+    
+    ax1.plot([0., 1.], [0., 0.], color = 'k')
+    #ax1.errorbar(phase_rv[0], rv[0] - rv_models[0], yerr = np.sqrt(rvErr[0]**2. + jitterSqrd[0]), fmt = 'o', markersize = 10,  color = colors[0])
+
+    for ii in range(0, len(t)):
+        ax1.errorbar(phase_rv[ii], rv[ii] - rv_models[ii] + gammaOffsets[ii], yerr = np.sqrt(rvErr[ii]**2. + jitterSqrd[ii]), fmt = 'o',  markersize = 10, color = colors[ii])
+
+    ax1.set_xlabel("Phase", fontsize = 18)
+    ax0.set_ylabel("Radial Velocity (km/s)", fontsize = 18)
+    ax1.set_ylabel("Residuals (km/s)", fontsize = 18)
+    yticks = ax0.yaxis.get_major_ticks()
+    xticks = ax0.xaxis.get_major_ticks()
+    xticks[0].label1.set_visible(False)
+    xticks[-1].label1.set_visible(False)
+    yticks[0].label1.set_visible(False)
+    ax0.legend(numpoints = 1, loc = 2, fontsize = 18)
+
+
+    plt.savefig(foldername + RVfigname)
+    plt.show()
+
+
+
+
+
+def get_RMS_residuals(p, t, rv, rvErr):
+    '''
+    p: input parameters
+    the rest are observations
+    '''
+    # Define all parameters except gammaOffsets and jitters
+    (period, ttran, ecosomega, esinomega, K) = p[0:5]
+
+    # Define a list of gamma offset parameters
+    gammas = p[5:5+numSpec]
+
+    # Define a list of jitter squared parameters
+    jitterSqrd = p[5+numSpec:len(p)]
+
+
+    rv_models = []
+    for ii in range(0, len(t)):
+        rv_models.append(RV_model(t[ii], period, ttran, ecosomega, esinomega, K, gammas[ii]))
+
+    n = 0
+    for ii in range(0, len(t)):
+        n += len(t[ii])
+
+    rms = 0
+    for ii in range(0, len(t)):
+        print ii, np.sum((rv[ii] - rv_models[ii])**2) / n
+        rms += ( np.sum((rv[ii] - rv_models[ii])**2) / n)
+
+    rms = np.sqrt(rms)
+
+
+    return rms
+
+
+
+
 
 # plot the value of each chain for each parameter as well as its log likelihood
 plt.figure(figsize = (24, 18))
@@ -225,6 +406,10 @@ if maketriangle:
     # remove the space between plots
     plt.subplots_adjust(hspace=0.0, wspace=0.0)
 
+    #save corner plot
+    plt.savefig(foldername + cornerFigname)
+    plt.show()
+
 
 # the best, median, and standard deviation of the input parameters
 # used to feed back to model_funcs for initrange, and plotting the best fit
@@ -237,6 +422,25 @@ print best
 
 print 'Median model parameters: '
 print meds
+
+
+t, rv, rvErr = readObservations('./HD102509/HD102509.orb', True)
+#t, rv, rvErr = readObservations('./WDS04342/L79.txt', True)
+numObs = 0
+for ii in range(0, len(t)):
+    numObs += len(t[ii])
+
+
+print plot_foldedRV(meds, t, rv, rvErr)
+
+rms = get_RMS_residuals(meds, t, rv, rvErr)
+print 'rms', rms
+
+redChisQ = (loglikelihood(
+    meds, t, rv, rvErr, chisQ=True) /
+    (numObs - len(meds)))
+
+print 'Reduced chi-square: ',  redChisQ
 
 # put the MCMC results into a TeX table
 if texout is not None:
@@ -259,8 +463,9 @@ if texout is not None:
 
     # get ready to write them out
     ofile = open(texout, 'w')
-    ofile.write('\\documentclass{article}\n\\usepackage{graphicx}\n\n\\begin{document}\n\n')
+    ofile.write('\\documentclass{article}\n\\usepackage{graphicx}\n\\usepackage[margin=1in]{geometry}\n\n\\begin{document}\n\n')
     ofile.write('\\begin{table}\n\\centering\n')
+    ofile.write('\\caption{Reduced $\\chi^2$: ' + str(np.round(redChisQ, decimals = 2)) + '}\n')
     ofile.write('\\begin{tabular}{| c | c |}\n\\hline\n')
 
     # what decimal place the error bar is at in each direction
@@ -297,176 +502,30 @@ if texout is not None:
     ofile.write('\\end{tabular}\n\\end{table}\n\n')
 
 
-    ofile.write('\\begin{figure}[!htb]\n\\centering\n\\includegraphics[width=\\textwidth]{' + str(RVfigname) + '}\n\\caption{RV fit to median MCMC parameters}\n\\end{figure}\n\n')
-    ofile.write('\\begin{figure}[!htb]\n\\centering\n\\includegraphics[width=\\textwidth]{' + str(cornerFigname) + '}\n\\caption{Corner plot for MCMC model}\n\\end{figure}\n\n')
-    ofile.write('\\begin{figure}[!htb]\n\\centering\n\\includegraphics[width=\\textwidth]{' + str(chainFigname) + '}\n\\caption{MCMC chains for all 50 walkers. Green line is burnout}\n\\end{figure}\n\n')
+
+    ofile.write('\\begin{figure}[!htb]\n\\centering\n\\includegraphics[width=\\textwidth]{' + str(RVfigname) + '}\n\\caption{RV fit to median MCMC parameters. RMS residual velocity of ' + str(np.round(rms, decimals = 2)) + ' $\\rm{km \\: s^{-1}}$.}\n\\end{figure}\n\n')
+    ofile.write('\\begin{figure}[!htb]\n\\centering\n\\includegraphics[width=\\textwidth]{' + str(cornerFigname) + '}\n\\caption{Contour plots showing the $1 \\sigma$, $2 \\sigma$, and $3 \\sigma$ constraints on pairs of parameters for the MCMC model.}\n\\end{figure}\n\n')
+    ofile.write('\\begin{figure}[!htb]\n\\centering\n\\includegraphics[width=\\textwidth]{' + str(chainFigname) + '}\n\\caption{MCMC chains for all 50 walkers. Green line is burnout: ' + str(burnin) + ' steps.}\n\\end{figure}\n\n')
 
     ofile.write('\\end{document}')
     ofile.close()
 
 
-#save corner plot
-plt.savefig(foldername + cornerFigname)
-plt.show()
-
-def plot_RV(p, t, rv,rvErr):
-    '''
-    Plot the RV data against RV model
-
-    '''
-    # Define all parameters except gammaOffsets and jitters
-    (period, ttran, ecosomega, esinomega, K, gamma) = p[0:6]
-
-    # Define a list of gamma offset parameters
-    gammaOffset = p[6:6+numSpec-1]
-
-    # Define a list of jitter squared parameters
-    jitterSqrd = p[6+numSpec-1:len(p)]
-
-    colors = [
-    '#800000', '#9A5324', '#808000', '#469990', '#000075', '#e6194B', '#f58231', 
-    '#ffe119', '#bfef45', '#3cb44b', '#42d4f4', '#4363d8', '#911eb4', '#f032e6'
-    ]
-
-    plt.figure(figsize=(15,10))
-    
-    gs = gridspec.GridSpec(2, 1, height_ratios=[2,1], wspace=0.03)
-    gs.update(hspace=0.)
-
-    ax0 = plt.subplot(gs[0])
-    ax1 = plt.subplot(gs[1])
-
-    ax0.errorbar(t[0], rv[0], yerr = np.sqrt(rvErr[0]**2. + jitterSqrd[0]), fmt = 'o', color = colors[0],  markersize = 10, label = "Spectra 1")
-    for ii in range(1, len(t)):
-        ax0.errorbar(t[ii], rv[ii] + gammaOffset[ii-1], yerr=np.sqrt(rvErr[ii]**2. + jitterSqrd[ii]), fmt='o', color = colors[ii],  markersize = 10, label = "Spectra " + str(ii+1))
-
-
-    t_plot = np.arange(15000, 60000)
-    model = RV_model(t_plot, p)
-    ax0.plot(t_plot, model, color = 'k')
-
-
-    rv_models = []
-    for ii in range(0, len(t)):
-        rv_models.append(RV_model(t[ii], p))
-    
-    ax1.plot([15000, 60000], [0., 0.], color = 'k')
-
-    ax1.errorbar(t[0], rv[0] - rv_models[0], yerr = np.sqrt(rvErr[0]**2. + jitterSqrd[0]), fmt = 'o', markersize = 10,  color = colors[0])
-    for ii in range(1, len(t)):
-        ax1.errorbar(t[ii], rv[ii] + gammaOffset[ii-1] - rv_models[ii], yerr = np.sqrt(rvErr[ii]**2. + jitterSqrd[ii]), fmt = 'o',  markersize = 10, color = colors[ii])
-
-   
-    ax1.set_xlabel("Time (units?)", fontsize = 18)
-    ax0.set_ylabel("Radial Velocity (km/s)", fontsize = 18)
-    ax1.set_ylabel("Residuals (km/s)", fontsize = 18)
-    yticks = ax0.yaxis.get_major_ticks()
-    xticks = ax0.xaxis.get_major_ticks()
-    xticks[0].label1.set_visible(False)
-    xticks[-1].label1.set_visible(False)
-    yticks[0].label1.set_visible(False)
-    ax0.legend(numpoints = 1, loc = 2, fontsize = 18)
-    plt.xlim(15000,60000)
-
-    plt.savefig(foldername + 'unfolded_' + RVfigname)
-    plt.show()
-
-def plot_foldedRV(p, t, rv, rvErr):
-    '''
-    Plot the RV data against RV model folded
-
-    '''
-    # Define all parameters except gammaOffsets and jitters
-    (period, ttran, ecosomega, esinomega, K, gamma) = p[0:6]
-
-    # Define a list of gamma offset parameters
-    gammaOffset = p[6:6+numSpec-1]
-
-    # Define a list of jitter squared parameters
-    jitterSqrd = p[6+numSpec-1:len(p)]
-
-    colors = [
-    '#800000', '#9A5324', '#808000', '#469990', '#000075', '#e6194B', '#f58231', 
-    '#ffe119', '#bfef45', '#3cb44b', '#42d4f4', '#4363d8', '#911eb4', '#f032e6'
-    ]
-
-    plt.figure(figsize=(15,10))
-    
-    gs = gridspec.GridSpec(2, 1, height_ratios=[2,1], wspace=0.03)
-    gs.update(hspace=0.)
-
-    ax0 = plt.subplot(gs[0])
-    ax1 = plt.subplot(gs[1])
-
-    phase_rv_1 = ((t[0] - p[1]) % p[0]) / p[0]
-    ax0.errorbar(phase_rv_1, rv[0], yerr = np.sqrt(rvErr[0]**2. + jitterSqrd[0]), fmt = 'o', color = colors[0],  markersize = 10, label = "Spectra 1")
-
-    phase_rv = [phase_rv_1]
-    for ii in range(1, len(t)):
-        phase_rv_i = ((t[ii]-p[1]) % p[0])/p[0]
-        phase_rv.append(phase_rv_i)
-        ax0.errorbar(phase_rv_i, rv[ii] + gammaOffset[ii-1], yerr=np.sqrt(rvErr[ii]**2. + jitterSqrd[ii]), fmt='o', color = colors[ii],  markersize = 10, label = "Spectra " + str(ii+1))
-
-
-    
-    
-    tMod = np.arange(p[0], p[0] + p[1])
-    model = RV_model(tMod, p)
-    phase = ((tMod-p[1]) % p[0]) / p[0]
-    lsort = np.argsort(phase)
-    ax0.plot(phase[lsort], model[lsort], color = 'k')
-
-
-    rv_models = []
-    for ii in range(0, len(t)):
-        rv_models.append(RV_model(t[ii], p))
-
-    
-    ax1.plot([0., 1.], [0., 0.], color = 'k')
-    ax1.errorbar(phase_rv[0], rv[0] - rv_models[0], yerr = np.sqrt(rvErr[0]**2. + jitterSqrd[0]), fmt = 'o', markersize = 10,  color = colors[0])
-
-    for ii in range(1, len(t)):
-        ax1.errorbar(phase_rv[ii], rv[ii] + gammaOffset[ii-1] - rv_models[ii], yerr = np.sqrt(rvErr[ii]**2. + jitterSqrd[ii]), fmt = 'o',  markersize = 10, color = colors[ii])
-
-    ax1.set_xlabel("Phase", fontsize = 18)
-    ax0.set_ylabel("Radial Velocity (km/s)", fontsize = 18)
-    ax1.set_ylabel("Residuals (km/s)", fontsize = 18)
-    yticks = ax0.yaxis.get_major_ticks()
-    xticks = ax0.xaxis.get_major_ticks()
-    xticks[0].label1.set_visible(False)
-    xticks[-1].label1.set_visible(False)
-    yticks[0].label1.set_visible(False)
-    ax0.legend(numpoints = 1, loc = 2, fontsize = 18)
-
-
-    plt.savefig(foldername + RVfigname)
-    plt.show()
 
 
 
+#median parameters for HD102509 100,000 step run w gammas instead of gamma_os
+p_med = [ 7.16902791e+01,  4.30725716e+04, -2.27864352e-04,  4.68399935e-04,
+          3.00898058e+01,  1.86445675e+00,  1.77603777e+00,  1.28836824e+00,
+          7.16327739e-01,  9.74341232e-01,  6.93817102e-01,  4.04686472e-01,
+          3.96837830e-01,  2.78218700e-01,  4.31310021e-01,  1.22508258e-01,
+          2.91819070e-02,  7.35546530e-02,  9.58132551e-02]
+
+p_best = [7.16900862e+01, 4.30725734e+04, 6.53477837e-06, 5.06544786e-06,
+ 3.00994492e+01, 1.45330737e+00, 1.76800811e+00, 1.33881120e+00,
+ 6.05038833e-01, 9.09778590e-01, 7.29530164e-01, 3.78518888e-01,
+ 3.80209986e-01, 2.85164883e-02, 5.49199523e-01, 7.96691754e-02,
+ 2.45596315e-02, 5.14855994e-02, 7.00575041e-02]
 
 
-def get_RMS_residuals_2obs(p, t_RV1, RV1, RVerr1, t_RV2, RV2, RVerr2):
-    '''
-    p: input parameters
-    the rest are observations
-    '''
-    predicted_RV1 = RV_model_2obs(t_RV1, p)
-    predicted_RV2 = RV_model_2obs(t_RV2, p)
 
-    n = len(t_RV1) + len(t_RV2)
-
-    rms = np.sqrt( (np.sum((RV1 - predicted_RV1)**2) + np.sum((RV2+gammaOffset[ii-1] - predicted_RV2) **2)) / n)
-
-    print RV1 - predicted_RV1
-    print RV2 + gammaOffset[ii-1] - predicted_RV2
-    mean1 = np.mean(RV1 - predicted_RV1)
-    mean2 = np.mean(RV2 + gammaOffset[ii-1] - predicted_RV2)
-    mean = np.mean(np.array([mean1, mean2]))
-
-    return rms, mean
-
-
-t, rv, rvErr = readObservations('./HD102509/HD102509.orb', True)
-
-print plot_RV(meds, t, rv, rvErr)
