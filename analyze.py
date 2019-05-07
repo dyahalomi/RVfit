@@ -13,19 +13,27 @@ import csv
 # current parameters for the model and their order
 
 #labels HIRES or TRES
-labels = ['$P$ (days)', '$t_{tran}$ (days)', '$\sqrt{e} cos\omega$', '$\sqrt{e} sin\omega$',
+labels = ['$P$ (days)', '$t_{tran}$ (days)', '$e cos\omega$', '$e sin\omega$',
           '$K_1$ (km/s)']
 
-numSpec = 7
+#WDS04342
+numSpec = 4
+
+#HD102509
+#numSpec = 7
+
+
 for i in range(0, numSpec):
     labels.append('$\gamma_{' + str(i+1) + '} (km/s)$')
 
+labels.append('$\sigma^2_{j} (km/s)^2$')
+
 for i in range(0, numSpec):
-    labels.append('$\sigma^2_{j,' + str(i+1) +'} (km/s)^2$')
+    labels.append('$M_{error, ' + str(i+1) + '} $')
 
 
 # the file with the MCMC chain results
-infile = './HD102509/chain_100000_gammas.txt'
+infile = './WDS04342/chain_100000_errorMult.txt'
 
 
 # after the burn in, only use every thin amount for speed
@@ -33,12 +41,13 @@ nthin = 1
 
 # output the median and 1-sigma error results to a TeX file
 # use None if not desired
-texout = './HD102509/chain_100000_gammas.tex'
+texout = './WDS04342/chain_100000_errorMult.tex'
 
-foldername = './HD102509/'
-RVfigname = 'RVfit_100000_gammas.jpg'
-cornerFigname = 'corner_100000_gammas.jpg'
-chainFigname = 'chainPlot_100000_gammas.jpg'
+foldername = './WDS04342/'
+RVfigname_meds = 'RVfit_meds_100000_errorMult.jpg'
+RVfigname_best = 'RVfit_best_100000_errorMult.jpg'
+cornerFigname = 'corner_100000_errorMult.jpg'
+chainFigname = 'chainPlot_100000_errorMult.jpg'
 
 
 # iteration where burn-in stops
@@ -74,14 +83,17 @@ def plot_RV(p, t, rv,rvErr):
     Plot the RV data against RV model
 
     '''
-    # Define all parameters except gammaOffsets and jitters
+    # Define all parameters except gamma and jitters
     (period, ttran, ecosomega, esinomega, K) = p[0:5]
 
-    # Define a list of gamma offset parameters
+    # Define a list of gamma parameters
     gammas = p[5:5+numSpec]
 
-    # Define a list of jitter squared parameters
-    jitterSqrd = p[5+numSpec:len(p)]
+    # Define jitter squared parameter
+    jitterSqrd = p[5+numSpec]
+
+    #Define list of error multipliers
+    errorMult = p[5+numSpec+1:len(p)]
 
 
     gammaOffsets = []
@@ -104,7 +116,7 @@ def plot_RV(p, t, rv,rvErr):
 
     #ax0.errorbar(t[0], rv[0], yerr = np.sqrt(rvErr[0]**2. + jitterSqrd[0]), fmt = 'o', color = colors[0],  markersize = 10, label = "Spectra 1")
     for ii in range(0, len(t)):
-        ax0.errorbar(t[ii], rv[ii] + gammaOffsets[ii], yerr=np.sqrt(rvErr[ii]**2. + jitterSqrd[ii]), fmt='o', color = colors[ii],  markersize = 10, label = "Spectra " + str(ii+1))
+        ax0.errorbar(t[ii], rv[ii] + gammaOffsets[ii], yerr=(errorMult[ii] * np.sqrt(rvErr[ii]**2. + jitterSqrd)), fmt='o', color = colors[ii],  markersize = 10, label = "Spectra " + str(ii+1))
 
 
     t_plot = np.arange(10000, 60000)
@@ -120,7 +132,7 @@ def plot_RV(p, t, rv,rvErr):
 
     #ax1.errorbar(t[0], rv[0] - rv_models[0], yerr = np.sqrt(rvErr[0]**2. + jitterSqrd[0]), fmt = 'o', markersize = 10,  color = colors[0])
     for ii in range(0, len(t)):
-        ax1.errorbar(t[ii], rv[ii] - rv_models[ii] + gammaOffsets[ii], yerr = np.sqrt(rvErr[ii]**2. + jitterSqrd[ii]), fmt = 'o',  markersize = 10, color = colors[ii])
+        ax1.errorbar(t[ii], rv[ii] - rv_models[ii] + gammaOffsets[ii], yerr=(errorMult[ii] * np.sqrt(rvErr[ii]**2. + jitterSqrd)), fmt = 'o',  markersize = 10, color = colors[ii])
 
    
     ax1.set_xlabel("Time (units?)", fontsize = 18)
@@ -138,19 +150,22 @@ def plot_RV(p, t, rv,rvErr):
     plt.show()
 
 
-def plot_foldedRV(p, t, rv, rvErr):
+def plot_foldedRV(p, t, rv, rvErr, filename):
     '''
     Plot the RV data against RV model folded
 
     '''
-    # Define all parameters except gammas and jitters
+    # Define all parameters except gamma and jitters
     (period, ttran, ecosomega, esinomega, K) = p[0:5]
 
-    # Define a list of gamma offset parameters
+    # Define a list of gamma parameters
     gammas = p[5:5+numSpec]
 
-    # Define a list of jitter squared parameters
-    jitterSqrd = p[5+numSpec:len(p)]
+    # Define jitter squared parameter
+    jitterSqrd = p[5+numSpec]
+
+    #Define list of error multipliers
+    errorMult = p[5+numSpec+1:len(p)]
 
     colors = [
     '#800000', '#9A5324', '#808000', '#469990', '#000075', '#e6194B', '#f58231', 
@@ -173,7 +188,7 @@ def plot_foldedRV(p, t, rv, rvErr):
     for ii in range(0, len(t)):
         phase_rv_i = ((t[ii]-p[1]) % p[0])/p[0]
         phase_rv.append(phase_rv_i)
-        ax0.errorbar(phase_rv_i, rv[ii] + gammaOffsets[ii], yerr=np.sqrt(rvErr[ii]**2. + jitterSqrd[ii]), fmt='o', color = colors[ii],  markersize = 10, label = "Spectra " + str(ii+1))
+        ax0.errorbar(phase_rv_i, rv[ii] + gammaOffsets[ii], yerr=(errorMult[ii] * np.sqrt(rvErr[ii]**2. + jitterSqrd)), fmt='o', color = colors[ii],  markersize = 10, label = "Spectra " + str(ii+1))
 
 
     
@@ -194,7 +209,7 @@ def plot_foldedRV(p, t, rv, rvErr):
     #ax1.errorbar(phase_rv[0], rv[0] - rv_models[0], yerr = np.sqrt(rvErr[0]**2. + jitterSqrd[0]), fmt = 'o', markersize = 10,  color = colors[0])
 
     for ii in range(0, len(t)):
-        ax1.errorbar(phase_rv[ii], rv[ii] - rv_models[ii] + gammaOffsets[ii], yerr = np.sqrt(rvErr[ii]**2. + jitterSqrd[ii]), fmt = 'o',  markersize = 10, color = colors[ii])
+        ax1.errorbar(phase_rv[ii], rv[ii] - rv_models[ii] + gammaOffsets[ii], yerr=(errorMult[ii] * np.sqrt(rvErr[ii]**2. + jitterSqrd)), fmt = 'o',  markersize = 10, color = colors[ii])
 
     ax1.set_xlabel("Phase", fontsize = 18)
     ax0.set_ylabel("Radial Velocity (km/s)", fontsize = 18)
@@ -207,7 +222,7 @@ def plot_foldedRV(p, t, rv, rvErr):
     ax0.legend(numpoints = 1, loc = 2, fontsize = 18)
 
 
-    plt.savefig(foldername + RVfigname)
+    plt.savefig(filename)
     plt.show()
 
 
@@ -219,14 +234,17 @@ def get_RMS_residuals(p, t, rv, rvErr):
     p: input parameters
     the rest are observations
     '''
-    # Define all parameters except gammaOffsets and jitters
+    # Define all parameters except gamma and jitters
     (period, ttran, ecosomega, esinomega, K) = p[0:5]
 
-    # Define a list of gamma offset parameters
+    # Define a list of gamma parameters
     gammas = p[5:5+numSpec]
 
-    # Define a list of jitter squared parameters
-    jitterSqrd = p[5+numSpec:len(p)]
+    # Define jitter squared parameter
+    jitterSqrd = p[5+numSpec]
+
+    #Define list of error multipliers
+    errorMult = p[5+numSpec+1:len(p)]
 
 
     rv_models = []
@@ -424,34 +442,52 @@ print 'Median model parameters: '
 print meds
 
 
-t, rv, rvErr = readObservations('./HD102509/HD102509.orb', True)
-#t, rv, rvErr = readObservations('./WDS04342/L79.txt', True)
+#t, rv, rvErr = readObservations('./HD102509/HD102509.orb', True)
+t, rv, rvErr = readObservations('./WDS04342/L79.txt', True)
 numObs = 0
 for ii in range(0, len(t)):
     numObs += len(t[ii])
 
 
-print plot_foldedRV(meds, t, rv, rvErr)
+print plot_foldedRV(meds, t, rv, rvErr, foldername + RVfigname_meds)
+print plot_foldedRV(best, t, rv, rvErr, foldername + RVfigname_best)
 
-rms = get_RMS_residuals(meds, t, rv, rvErr)
-print 'rms', rms
+rms_meds = get_RMS_residuals(meds, t, rv, rvErr)
+print 'rms meds', rms_meds
 
-redChisQ = (loglikelihood(
+rms_best = get_RMS_residuals(best, t, rv, rvErr)
+print 'rms best', rms_best
+
+redChisQ_meds = (loglikelihood(
     meds, t, rv, rvErr, chisQ=True) /
     (numObs - len(meds)))
 
-print 'Reduced chi-square: ',  redChisQ
+print 'Reduced chi-square medians: ',  redChisQ_meds
+
+
+redChisQ_best = (loglikelihood(
+    best, t, rv, rvErr, chisQ=True) /
+    (numObs - len(best)))
+
+print 'Reduced chi-square best: ',  redChisQ_best
+
 
 # put the MCMC results into a TeX table
 if texout is not None:
+    best_out = best.copy()
+    best_out = list(best_out)
 
     # calculate eccentricity and add it to the list of parameters
     e = (np.sqrt(x[:, 2]**2. + x[:, 3]**2.)).reshape((len(x[:, 0]), 1))
+    e_best = np.sqrt(best[2]**2. + best[3]**2.)
+    best_out.append(e_best)
     x = np.concatenate((x, e), axis=1)
     labels.append('$e$')
 
     # add omega to the list
     omega = np.arctan2(x[:, 3], x[:, 2]).reshape((len(x[:, 0]), 1))*180./np.pi
+    omega_best = np.arctan2(best[3], best[2])*180./np.pi
+    best_out.append(omega_best)
     x = np.concatenate((x, omega), axis=1)
     labels.append('$\omega$ (deg)')
 
@@ -465,8 +501,8 @@ if texout is not None:
     ofile = open(texout, 'w')
     ofile.write('\\documentclass{article}\n\\usepackage{graphicx}\n\\usepackage[margin=1in]{geometry}\n\n\\begin{document}\n\n')
     ofile.write('\\begin{table}\n\\centering\n')
-    ofile.write('\\caption{Reduced $\\chi^2$: ' + str(np.round(redChisQ, decimals = 2)) + '}\n')
-    ofile.write('\\begin{tabular}{| c | c |}\n\\hline\n')
+    ofile.write('\\caption{Median Reduced $\\chi^2$: ' + str(np.round(redChisQ_meds, decimals = 2)) + ' -- Maximum-Likelihood Reduced $\\chi^2$: ' + str(np.round(redChisQ_best, decimals = 2)) + '}\n')
+    ofile.write('\\begin{tabular}{| c | c | c |}\n\\hline\n')
 
     # what decimal place the error bar is at in each direction
     sigfigslow = np.floor(np.log10(np.abs(plus1-med)))
@@ -482,6 +518,7 @@ if texout is not None:
     sigfigs = sigfigs.astype(int)
 
     # go through each parameter
+    ofile.write('Parameter & Median and $1 \sigma$ Values & Maximum-Likelihood \\\\\n\\hline\n')
     for ii in np.arange(len(labels)):
       
         # if we're rounding to certain decimal places, do it
@@ -496,15 +533,20 @@ if texout is not None:
                                             decimals=sigfigs[ii]))
         ostr += '}_{-' + str(val % np.around(med[ii]-neg1[ii],
                                              decimals=sigfigs[ii]))
-        ostr += '}$ \\\\\n\\hline\n'
+        
+        best_val = round(best_out[ii], sigfigs[ii])
+        ostr += '}$ & $' + str(best_val)
+
+        ostr += '$ \\\\\n\\hline\n'
         ofile.write(ostr)
 
     ofile.write('\\end{tabular}\n\\end{table}\n\n')
 
 
-
-    ofile.write('\\begin{figure}[!htb]\n\\centering\n\\includegraphics[width=\\textwidth]{' + str(RVfigname) + '}\n\\caption{RV fit to median MCMC parameters. RMS residual velocity of ' + str(np.round(rms, decimals = 2)) + ' $\\rm{km \\: s^{-1}}$.}\n\\end{figure}\n\n')
-    ofile.write('\\begin{figure}[!htb]\n\\centering\n\\includegraphics[width=\\textwidth]{' + str(cornerFigname) + '}\n\\caption{Contour plots showing the $1 \\sigma$, $2 \\sigma$, and $3 \\sigma$ constraints on pairs of parameters for the MCMC model.}\n\\end{figure}\n\n')
+    ofile.write('\\clearpage\n\n')
+    ofile.write('\\begin{figure}[!htb]\n\\centering\n\\includegraphics[width=0.9\\textwidth]{' + str(RVfigname_meds) + '}\n\\caption{RV fit to median MCMC parameters. RMS residual velocity of ' + str(np.round(rms_meds, decimals = 2)) + ' $\\rm{km \\: s^{-1}}$.}\n\n')
+    ofile.write('\\includegraphics[width=0.9\\textwidth]{' + str(RVfigname_best) + '}\n\\caption{RV fit to maximum-likelihood MCMC parameters. RMS residual velocity of ' + str(np.round(rms_best, decimals = 2)) + ' $\\rm{km \\: s^{-1}}$.}\n\\end{figure}\n\n\n')
+    ofile.write('\\begin{figure}[!htb]\n\\centering\n\\includegraphics[width=\\textwidth]{' + str(cornerFigname) + '}\n\\caption{Contour plots showing the $1 \\sigma$, $2 \\sigma$, and $3 \\sigma$ constraints on pairs of parameters for the MCMC model.}\n\\end{figure}\n\n\n')
     ofile.write('\\begin{figure}[!htb]\n\\centering\n\\includegraphics[width=\\textwidth]{' + str(chainFigname) + '}\n\\caption{MCMC chains for all 50 walkers. Green line is burnout: ' + str(burnin) + ' steps.}\n\\end{figure}\n\n')
 
     ofile.write('\\end{document}')

@@ -31,8 +31,10 @@ def initrange(p, numSpec):
 	for i in range(0, numSpec):
 		errorEst.append(4.8e-02)
 
+	errorEst.append(1e-5)
+
 	for i in range(0, numSpec):
-		errorEst.append(1e-5)
+		errorEst.append(0.1)
 
 	errorEst = np.array(errorEst)
 
@@ -115,7 +117,7 @@ def RV_model(t, period, ttran, ecosomega, esinomega, K, gamma):
 
 
 
-	#Determine the Energy: E
+	#Determine the Eccentric Anomaly: E
 	E = kepler(M, e)
 
 	#Solve for fanom (measure of location on orbit)
@@ -164,8 +166,13 @@ def loglikelihood(p, t, RV, RVerr, chisQ=False):
 	# Define a list of gamma parameters
 	gammas = p[5:5+numSpec]
 
-	# Define a list of jitter squared parameters
-	jitterSqrd = p[5+numSpec:len(p)]
+	# Define jitter squared parameter
+	jitterSqrd = p[5+numSpec]
+
+	#Define list of error multipliers
+	errorMult = p[5+numSpec+1:len(p)]
+
+
 
 	# Check observations are consistent
 	if ( len(t) != len(RV) or len(t) != len(RVerr) or len(RV) != len(RVerr) ):
@@ -184,10 +191,10 @@ def loglikelihood(p, t, RV, RVerr, chisQ=False):
 	loglikelihood = 0
 
 	for ii in range(0, numSpec):
-		totchisq += np.sum((RV[ii]-models[ii])**2. / ( (RVerr[ii]**2. + jitterSqrd[ii]) ))	
+		totchisq += np.sum((RV[ii]-models[ii])**2. / ( errorMult[ii] * (RVerr[ii]**2. + jitterSqrd) ))	
 		loglikelihood += -np.sum( 
-			(RV[ii]-models[ii])**2. / ( 2. * (RVerr[ii]**2. + jitterSqrd[ii]) ) +
-			np.log(np.sqrt(2. * np.pi * (RVerr[ii]**2. + jitterSqrd[ii])))
+			(RV[ii]-models[ii])**2. / ( 2. * errorMult[ii] * (RVerr[ii]**2. + jitterSqrd) ) +
+			np.log(np.sqrt(2. * np.pi * errorMult[ii] * (RVerr[ii]**2. + jitterSqrd)))
 			)
 
 
@@ -220,14 +227,17 @@ def logprior(p, numSpec):
 		priors.
 	"""
 
-	# Define all parameters except gammas and jitters
+	# Define all parameters except gamma and jitters
 	(period, ttran, ecosomega, esinomega, K) = p[0:5]
 
-	# Define a list of gamma offset parameters
+	# Define a list of gamma parameters
 	gammas = p[5:5+numSpec]
 
-	# Define a list of jitter squared parameters
-	jitterSqrd = p[5+numSpec:len(p)]
+	# Define jitter squared parameter
+	jitterSqrd = p[5+numSpec]
+
+	#Define list of error multipliers
+	errorMult = p[5+numSpec+1:len(p)]
 
 	e = np.sqrt(ecosomega**2. + esinomega**2.)
 	omega = np.arctan2(esinomega, ecosomega)
@@ -236,9 +246,13 @@ def logprior(p, numSpec):
 	if (period < 0. or e < 0. or e >= 1.):
 		return -np.inf
 
-	# If jitter squared terms not physically possible or too large (> 1 km/s), return negative infinity
-	for ii in range(0, len(jitterSqrd)):
-		if (jitterSqrd[ii]**.5 > 1 or jitterSqrd[ii] < 0):
+	# If jitter squared term not physically possible or too large (> 1 km/s), return negative infinity
+	if (jitterSqrd**.5 > 1 or jitterSqrd < 0):
+		return -np.inf
+
+	#Set a uniform prior on error multiplier from 0 to 10
+	for ii in range(0, numSpec):
+		if (errorMult[ii] > 10 or errorMult[ii] < 0):
 			return -np.inf
 
 	totchisq = 0.
@@ -373,10 +387,10 @@ def readObservations(filename, sepSpectra=False):
 
 		if sepSpectra:
 			#wds04342
-			#spectra.append(int(observations[obsNum][0][specStart[obsNum]:specEnd[obsNum] + 1]))
+			spectra.append(int(observations[obsNum][0][specStart[obsNum]:specEnd[obsNum] + 1]))
 
 			#hd102509
-			spectra.append(int(observations[obsNum][0][specStart[obsNum] + 4:specEnd[obsNum] + 1]))
+			#spectra.append(int(observations[obsNum][0][specStart[obsNum] + 4:specEnd[obsNum] + 1]))
 
 	tSep = []
 	rvSep = []

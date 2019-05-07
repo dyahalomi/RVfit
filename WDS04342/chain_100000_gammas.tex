@@ -6,47 +6,55 @@
 
 \begin{table}
 \centering
-\caption{Reduced $\chi^2$: 0.95}
-\begin{tabular}{| c | c |}
+\caption{Median Reduced $\chi^2$: 0.95 -- Maximum-Likelihood Reduced $\chi^2$: 1.01}
+\begin{tabular}{| c | c | c |}
 \hline
-$P$ (days) & $3679.8^{+5.0}_{-4.7}$ \\
+Parameter & Median and $1 \sigma$ Values & Maximum-Likelihood \\
 \hline
-$t_{tran}$ (days) & $48835^{+15}_{-15}$ \\
+$P$ (days) & $3679.8^{+5.0}_{-4.7}$ & $3682.4$ \\
 \hline
-$\sqrt{e} cos\omega$ & $0.744^{+0.013}_{-0.013}$ \\
+$t_{tran}$ (days) & $48835^{+15}_{-15}$ & $48823.0$ \\
 \hline
-$\sqrt{e} sin\omega$ & $-0.214^{+0.033}_{-0.033}$ \\
+$\sqrt{e} cos\omega$ & $0.744^{+0.013}_{-0.013}$ & $0.755$ \\
 \hline
-$K_1$ (km/s) & $4.54^{+0.13}_{-0.13}$ \\
+$\sqrt{e} sin\omega$ & $-0.214^{+0.033}_{-0.033}$ & $-0.194$ \\
 \hline
-$\gamma_{0} (km/s)$ & $41.392^{+0.093}_{-0.093}$ \\
+$K_1$ (km/s) & $4.54^{+0.13}_{-0.13}$ & $4.38$ \\
 \hline
-$\gamma_{1} (km/s)$ & $41.201^{+0.093}_{-0.093}$ \\
+$\gamma_{1} (km/s)$ & $41.392^{+0.093}_{-0.093}$ & $41.458$ \\
 \hline
-$\gamma_{2} (km/s)$ & $40.68^{+0.76}_{-0.76}$ \\
+$\gamma_{2} (km/s)$ & $41.201^{+0.093}_{-0.093}$ & $41.216$ \\
 \hline
-$\gamma_{3} (km/s)$ & $41.12^{+0.66}_{-0.65}$ \\
+$\gamma_{3} (km/s)$ & $40.68^{+0.76}_{-0.76}$ & $40.29$ \\
 \hline
-$\sigma^2_{j,1} (km/s)^2$ & $0.104^{+0.087}_{-0.060}$ \\
+$\gamma_{4} (km/s)$ & $41.12^{+0.66}_{-0.65}$ & $41.11$ \\
 \hline
-$\sigma^2_{j,2} (km/s)^2$ & $0.205^{+0.078}_{-0.052}$ \\
+$\sigma^2_{j,1} (km/s)^2$ & $0.104^{+0.087}_{-0.060}$ & $0.103$ \\
 \hline
-$\sigma^2_{j,3} (km/s)^2$ & $0.50^{+0.34}_{-0.34}$ \\
+$\sigma^2_{j,2} (km/s)^2$ & $0.205^{+0.078}_{-0.052}$ & $0.213$ \\
 \hline
-$\sigma^2_{j,4} (km/s)^2$ & $0.50^{+0.34}_{-0.34}$ \\
+$\sigma^2_{j,3} (km/s)^2$ & $0.50^{+0.34}_{-0.34}$ & $0.0$ \\
 \hline
-$e$ & $0.775^{+0.013}_{-0.013}$ \\
+$\sigma^2_{j,4} (km/s)^2$ & $0.50^{+0.34}_{-0.34}$ & $0.0$ \\
 \hline
-$\omega$ (deg) & $-16.0^{+2.4}_{-2.4}$ \\
+$e$ & $0.775^{+0.013}_{-0.013}$ & $0.779$ \\
+\hline
+$\omega$ (deg) & $-16.0^{+2.4}_{-2.4}$ & $-14.4$ \\
 \hline
 \end{tabular}
 \end{table}
 
+\clearpage
+
 \begin{figure}[!htb]
 \centering
-\includegraphics[width=\textwidth]{RVfit_100000_gammas.jpg}
-\caption{RV fit to median MCMC parameters. RMS residual velocity of 0.71$\rm{km \: s^{-1}}$.}
+\includegraphics[width=0.9\textwidth]{RVfit_meds_100000_errorMult.jpg}
+\caption{RV fit to median MCMC parameters. RMS residual velocity of 0.53 $\rm{km \: s^{-1}}$.}
+
+\includegraphics[width=0.9\textwidth]{RVfit_best_100000_errorMult.jpg}
+\caption{RV fit to maximum-likelihood MCMC parameters. RMS residual velocity of 0.54 $\rm{km \: s^{-1}}$.}
 \end{figure}
+
 
 \begin{figure}[!htb]
 \centering
@@ -54,10 +62,11 @@ $\omega$ (deg) & $-16.0^{+2.4}_{-2.4}$ \\
 \caption{Contour plots showing the $1 \sigma$, $2 \sigma$, and $3 \sigma$ constraints on pairs of parameters for the MCMC model.}
 \end{figure}
 
+
 \begin{figure}[!htb]
 \centering
 \includegraphics[width=\textwidth]{chainPlot_100000_gammas.jpg}
-\caption{MCMC chains for all 50 walkers. Green line is burnout.}
+\caption{MCMC chains for all 50 walkers. Green line is burnout: 4000 steps.}
 \end{figure}
 
 \end{document}

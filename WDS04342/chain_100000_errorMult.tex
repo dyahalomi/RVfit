@@ -1,0 +1,74 @@
+\documentclass{article}
+\usepackage{graphicx}
+\usepackage[margin=1in]{geometry}
+
+\begin{document}
+
+\begin{table}
+\centering
+\caption{Median Reduced $\chi^2$: 1.02 -- Maximum-Likelihood Reduced $\chi^2$: 1.25}
+\begin{tabular}{| c | c | c |}
+\hline
+Parameter & Median and $1 \sigma$ Values & Maximum-Likelihood \\
+\hline
+$P$ (days) & $3679.9^{+4.7}_{-4.7}$ & $3683.4$ \\
+\hline
+$t_{tran}$ (days) & $48835^{+15}_{-15}$ & $48840.0$ \\
+\hline
+$e cos\omega$ & $0.744^{+0.012}_{-0.013}$ & $0.741$ \\
+\hline
+$e sin\omega$ & $-0.214^{+0.033}_{-0.032}$ & $-0.215$ \\
+\hline
+$K_1$ (km/s) & $4.54^{+0.13}_{-0.13}$ & $4.56$ \\
+\hline
+$\gamma_{1} (km/s)$ & $41.391^{+0.092}_{-0.093}$ & $41.411$ \\
+\hline
+$\gamma_{2} (km/s)$ & $41.199^{+0.091}_{-0.089}$ & $41.268$ \\
+\hline
+$\gamma_{3} (km/s)$ & $40.7^{+1.0}_{-1.0}$ & $40.7$ \\
+\hline
+$\gamma_{4} (km/s)$ & $41.12^{+0.62}_{-0.63}$ & $41.17$ \\
+\hline
+$\sigma^2_{j} (km/s)^2$ & $0.085^{+0.176}_{-0.053}$ & $0.019$ \\
+\hline
+$M_{error, 1} $ & $0.97^{+0.34}_{-0.32}$ & $1.03$ \\
+\hline
+$M_{error, 2} $ & $2.4^{+3.9}_{-1.7}$ & $8.9$ \\
+\hline
+$M_{error, 3} $ & $5.0^{+3.4}_{-3.4}$ & $0.0$ \\
+\hline
+$M_{error, 4} $ & $5.0^{+3.5}_{-3.4}$ & $0.4$ \\
+\hline
+$e$ & $0.775^{+0.013}_{-0.013}$ & $0.772$ \\
+\hline
+$\omega$ (deg) & $-16.0^{+2.4}_{-2.4}$ & $-16.1$ \\
+\hline
+\end{tabular}
+\end{table}
+
+\clearpage
+
+\begin{figure}[!htb]
+\centering
+\includegraphics[width=0.9\textwidth]{RVfit_meds_100000_errorMult.jpg}
+\caption{RV fit to median MCMC parameters. RMS residual velocity of 0.53 $\rm{km \: s^{-1}}$.}
+
+\includegraphics[width=0.9\textwidth]{RVfit_best_100000_errorMult.jpg}
+\caption{RV fit to maximum-likelihood MCMC parameters. RMS residual velocity of 0.53 $\rm{km \: s^{-1}}$.}
+\end{figure}
+
+
+\begin{figure}[!htb]
+\centering
+\includegraphics[width=\textwidth]{corner_100000_errorMult.jpg}
+\caption{Contour plots showing the $1 \sigma$, $2 \sigma$, and $3 \sigma$ constraints on pairs of parameters for the MCMC model.}
+\end{figure}
+
+
+\begin{figure}[!htb]
+\centering
+\includegraphics[width=\textwidth]{chainPlot_100000_errorMult.jpg}
+\caption{MCMC chains for all 50 walkers. Green line is burnout: 4000 steps.}
+\end{figure}
+
+\end{document}
